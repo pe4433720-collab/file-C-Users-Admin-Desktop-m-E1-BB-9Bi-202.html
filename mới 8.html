@@ -1,0 +1,611 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Đếm Ngược Kỳ Thi & Chuỗi Học Tập</title>
+    <style>
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: 'Segoe UI', Roboto, -apple-system, BlinkMacSystemFont, sans-serif;
+        }
+
+        /* NỀN ĐỔI MÀU SẮC RỰC RỠ (Xanh, Tím, Vàng, Hồng, Đỏ, Cam) */
+        body {
+            background: linear-gradient(-45deg, #2563eb, #7c3aed, #ec4899, #ef4444, #f97316, #eab308, #06b6d4);
+            background-size: 600% 600%;
+            animation: vibrantGradient 10s ease infinite;
+            color: #ffffff;
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+            position: relative;
+            overflow-x: hidden;
+        }
+
+        @keyframes vibrantGradient {
+            0% { background-position: 0% 50%; }
+            20% { background-position: 50% 100%; }
+            40% { background-position: 100% 50%; }
+            60% { background-position: 80% 0%; }
+            80% { background-position: 20% 0%; }
+            100% { background-position: 0% 50%; }
+        }
+
+        /* Đốm sáng Neon trang trí background */
+        .glow-effect {
+            position: absolute;
+            width: 350px;
+            height: 350px;
+            background: rgba(255, 255, 255, 0.25);
+            filter: blur(120px);
+            border-radius: 50%;
+            pointer-events: none;
+            z-index: 0;
+        }
+
+        .container {
+            position: relative;
+            z-index: 1;
+            background: rgba(15, 23, 42, 0.85);
+            backdrop-filter: blur(20px);
+            border: 2px solid rgba(255, 255, 255, 0.2);
+            border-radius: 28px;
+            padding: 32px 28px;
+            width: 100%;
+            max-width: 720px;
+            box-shadow: 0 25px 60px rgba(0, 0, 0, 0.6), 0 0 40px rgba(56, 189, 248, 0.3);
+            text-align: center;
+        }
+
+        /* TIÊU ĐỀ ĐÃ XÓA CHỮ GEN Z */
+        h1 {
+            font-size: 2.1rem;
+            margin-bottom: 22px;
+            background: linear-gradient(90deg, #38bdf8, #f43f5e, #facc15);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            font-weight: 900;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+        }
+
+        /* KHU VỰC CÁC NÚT BẤM KỲ THI */
+        .exam-selector {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 12px;
+            justify-content: center;
+            margin-bottom: 24px;
+        }
+
+        .btn-exam {
+            background: #2a3547;
+            color: #94a3b8;
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            padding: 12px 22px;
+            border-radius: 16px;
+            cursor: pointer;
+            font-weight: 700;
+            transition: all 0.2s ease-in-out;
+            font-size: 0.95rem;
+            outline: none;
+        }
+
+        .btn-exam:hover {
+            background: #334155;
+            color: #ffffff;
+        }
+
+        /* Khi click chọn nút nào, nút đó sáng màu xanh y hệt ảnh mẫu giữa kỳ 1 */
+        .btn-exam.active {
+            background: #0284c7 !important;
+            color: #ffffff !important;
+            border-color: #38bdf8 !important;
+            box-shadow: 0 0 20px rgba(2, 132, 199, 0.9), 0 0 4px #38bdf8;
+            transform: scale(1.03);
+        }
+
+        /* KHU VỰC TỰ ĐIỀN NGÀY GIỜ (KHÔNG TỰ ĐỘNG ĐIỀN, CHỌN LÀ ĐẾM NGƯỢC NGAY) */
+        .custom-date-box {
+            background: rgba(30, 41, 59, 0.7);
+            padding: 16px;
+            border-radius: 18px;
+            margin-bottom: 24px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 12px;
+            flex-wrap: wrap;
+            border: 1px solid rgba(56, 189, 248, 0.25);
+        }
+
+        .custom-date-box label {
+            font-size: 0.95rem;
+            color: #f1f5f9;
+            font-weight: 600;
+        }
+
+        .custom-date-box input[type="datetime-local"] {
+            background: #0f172a;
+            border: 2px solid #0284c7;
+            color: #38bdf8;
+            padding: 8px 14px;
+            border-radius: 12px;
+            font-size: 0.95rem;
+            outline: none;
+            font-weight: 700;
+            cursor: pointer;
+        }
+
+        .exam-title {
+            font-size: 1.65rem;
+            font-weight: 800;
+            color: #ffffff;
+            margin-bottom: 6px;
+            text-shadow: 0 0 12px rgba(255, 255, 255, 0.2);
+        }
+
+        .exam-target-date {
+            font-size: 0.95rem;
+            color: #38bdf8;
+            margin-bottom: 22px;
+            font-weight: 600;
+        }
+
+        /* KHUNG ĐẾM NGƯỢC THỜI GIAN */
+        .countdown-grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 12px;
+            margin-bottom: 26px;
+        }
+
+        .time-card {
+            background: rgba(15, 23, 42, 0.8);
+            border-radius: 20px;
+            padding: 18px 8px;
+            border: 1px solid rgba(255, 255, 255, 0.12);
+            box-shadow: inset 0 0 15px rgba(0, 0, 0, 0.4);
+        }
+
+        .time-value {
+            font-size: 2.4rem;
+            font-weight: 900;
+            color: #38bdf8;
+            line-height: 1;
+        }
+
+        .time-label {
+            font-size: 0.75rem;
+            color: #94a3b8;
+            text-transform: uppercase;
+            margin-top: 8px;
+            font-weight: 700;
+            letter-spacing: 0.5px;
+        }
+
+        /* BẢNG CHUỖI NGÀY HỌC TẬP (STREAK SYSTEM) */
+        .streak-container {
+            background: rgba(30, 41, 59, 0.65);
+            border: 1px solid rgba(236, 72, 153, 0.35);
+            border-radius: 22px;
+            padding: 22px;
+            margin-top: 20px;
+        }
+
+        .streak-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 16px;
+        }
+
+        .streak-title {
+            font-size: 1.1rem;
+            font-weight: 800;
+            color: #ffffff;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .streak-count {
+            color: #facc15;
+            font-weight: 900;
+            font-size: 1.25rem;
+            text-shadow: 0 0 10px rgba(250, 204, 21, 0.6);
+        }
+
+        .streak-grid {
+            display: grid;
+            grid-template-columns: repeat(7, 1fr);
+            gap: 8px;
+            margin-bottom: 18px;
+        }
+
+        .streak-day {
+            background: rgba(15, 23, 42, 0.6);
+            border-radius: 14px;
+            padding: 12px 4px;
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 8px;
+            transition: all 0.3s ease;
+        }
+
+        .streak-day.completed {
+            background: rgba(16, 185, 129, 0.25);
+            border-color: #10b981;
+            box-shadow: 0 0 12px rgba(16, 185, 129, 0.3);
+        }
+
+        .streak-day.today {
+            border-color: #ec4899;
+            box-shadow: 0 0 8px rgba(236, 72, 153, 0.4);
+        }
+
+        .day-name {
+            font-size: 0.8rem;
+            color: #cbd5e1;
+            font-weight: 700;
+        }
+
+        .day-check {
+            width: 26px;
+            height: 26px;
+            border-radius: 50%;
+            background: #334155;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.85rem;
+            font-weight: bold;
+            color: transparent;
+        }
+
+        .streak-day.completed .day-check {
+            background: #10b981;
+            color: #ffffff;
+        }
+
+        .btn-checkin {
+            background: linear-gradient(135deg, #10b981, #059669);
+            color: white;
+            border: none;
+            padding: 14px 24px;
+            border-radius: 16px;
+            font-weight: 800;
+            font-size: 1rem;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            width: 100%;
+            box-shadow: 0 5px 18px rgba(16, 185, 129, 0.4);
+        }
+
+        .btn-checkin:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 22px rgba(16, 185, 129, 0.6);
+        }
+
+        .btn-checkin:disabled {
+            background: #334155;
+            color: #64748b;
+            cursor: not-allowed;
+            box-shadow: none;
+            transform: none;
+        }
+
+        .motto-banner {
+            margin-top: 18px;
+            padding: 12px;
+            background: rgba(56, 189, 248, 0.12);
+            border-radius: 14px;
+            color: #38bdf8;
+            font-size: 0.9rem;
+            font-weight: 600;
+        }
+
+        @media (max-width: 500px) {
+            .countdown-grid { grid-template-columns: repeat(2, 1fr); }
+            .time-value { font-size: 1.9rem; }
+            .btn-exam { padding: 10px 14px; font-size: 0.85rem; }
+        }
+    </style>
+</head>
+<body>
+
+<div class="glow-effect"></div>
+
+<div class="container">
+    <h1>🔥 ĐẾM NGƯỢC KỲ THI 🔥</h1>
+
+    <!-- KHU VỰC CÁC NÚT CHỌN KỲ THI -->
+    <div class="exam-selector">
+        <button class="btn-exam active" onclick="selectExam('gk1', this)">Giữa Kỳ 1</button>
+        <button class="btn-exam" onclick="selectExam('ck1', this)">Cuối Kỳ 1</button>
+        <button class="btn-exam" onclick="selectExam('gk2', this)">Giữa Kỳ 2</button>
+        <button class="btn-exam" onclick="selectExam('ck2', this)">Cuối Kỳ 2</button>
+        <button class="btn-exam" onclick="selectExam('lop10', this)">🔥 THI VÀO LỚP 10</button>
+    </div>
+
+    <!-- KHU VỰC TỰ ĐIỀN NGÀY GIỜ -->
+    <div class="custom-date-box">
+        <label for="datetime-picker">Tự điền ngày/giờ thi:</label>
+        <input type="datetime-local" id="datetime-picker" onchange="onCustomDateChange()">
+    </div>
+
+    <div class="exam-title" id="current-exam-title">Kỳ Thi Giữa Học Kỳ 1</div>
+    <div class="exam-target-date" id="current-target-date">Thời điểm: --/--/---- --:--</div>
+
+    <!-- KHUNG ĐẾM NGƯỢC -->
+    <div class="countdown-grid">
+        <div class="time-card">
+            <div class="time-value" id="days">00</div>
+            <div class="time-label">Ngày</div>
+        </div>
+        <div class="time-card">
+            <div class="time-value" id="hours">00</div>
+            <div class="time-label">Giờ</div>
+        </div>
+        <div class="time-card">
+            <div class="time-value" id="minutes">00</div>
+            <div class="time-label">Phút</div>
+        </div>
+        <div class="time-card">
+            <div class="time-value" id="seconds">00</div>
+            <div class="time-label">Giây</div>
+        </div>
+    </div>
+
+    <!-- KHUNG CHUỖI NGÀY HỌC TẬP (STREAK) -->
+    <div class="streak-container">
+        <div class="streak-header">
+            <div class="streak-title">
+                ⚡ Chuỗi Học Tập Tuần Này
+            </div>
+            <div>Chuỗi hiện tại: <span class="streak-count" id="streak-count">0</span> ngày</div>
+        </div>
+
+        <div class="streak-grid" id="streak-grid">
+            <!-- Tự động tạo bởi JS từ Thứ 2 đến Chủ Nhật -->
+        </div>
+
+        <button class="btn-checkin" id="checkin-btn" onclick="doCheckin()">
+            ✅ Điểm Danh Học Tập Hôm Nay
+        </button>
+    </div>
+
+    <div class="motto-banner" id="motto-banner">
+        💪 Bắt đầu ôn tập ngay từ hôm nay để đạt kết quả cao nhất!
+    </div>
+</div>
+
+<script>
+    // Danh sách các kỳ thi mặc định
+    const defaultExams = {
+        gk1: { title: "Kỳ Thi Giữa Học Kỳ 1", motto: "🎯 Mục tiêu: Bứt phá điểm số Giữa Kỳ 1!" },
+        ck1: { title: "Kỳ Thi Cuối Học Kỳ 1", motto: "🔥 Mục tiêu: Ôn tập toàn diện kiến thức Học Kỳ 1!" },
+        gk2: { title: "Kỳ Thi Giữa Học Kỳ 2", motto: "🚀 Tăng tốc chuẩn bị cho chặng đường cuối!" },
+        ck2: { title: "Kỳ Thi Cuối Học Kỳ 2", motto: "🏆 Quyết tâm hoàn thành xuất sắc năm học!" },
+        lop10: { title: "Kỳ Thi Vào Lớp 10 THPT Công Lập", motto: "👑 Trận chiến quan trọng nhất! Quyết tâm đỗ NV1 Công Lập!" }
+    };
+
+    let currentExamKey = 'gk1';
+    let targetTime = 0;
+    let timerInterval = null;
+
+    function formatDateTime(dateObj) {
+        const d = String(dateObj.getDate()).padStart(2, '0');
+        const m = String(dateObj.getMonth() + 1).padStart(2, '0');
+        const y = dateObj.getFullYear();
+        const h = String(dateObj.getHours()).padStart(2, '0');
+        const min = String(dateObj.getMinutes()).padStart(2, '0');
+        return `${h}:${min} - Ngày ${d}/${m}/${y}`;
+    }
+
+    // CLICK NÚT ĐỔI MÀU XANH VA CẬP NHẬT KỲ THI
+    function selectExam(key, element) {
+        currentExamKey = key;
+        
+        // Đổi màu xanh sáng đúng nút được kích hoạt
+        const buttons = document.querySelectorAll('.btn-exam');
+        buttons.forEach(btn => btn.classList.remove('active'));
+        element.classList.add('active');
+
+        const examData = defaultExams[key];
+        document.getElementById('current-exam-title').innerText = examData.title;
+        document.getElementById('motto-banner').innerText = examData.motto;
+
+        // Lấy ngày đã lưu trong bộ nhớ nếu có
+        const savedDate = localStorage.getItem('custom_exam_date_' + key) || "";
+        document.getElementById('datetime-picker').value = savedDate;
+
+        if (savedDate) {
+            const targetDateObj = new Date(savedDate);
+            targetTime = targetDateObj.getTime();
+            document.getElementById('current-target-date').innerText = "Thời điểm: " + formatDateTime(targetDateObj);
+            runCountdown();
+        } else {
+            targetTime = 0;
+            document.getElementById('current-target-date').innerText = "Vui lòng tự chọn ngày/giờ thi bên trên";
+            resetCountdownUI();
+        }
+    }
+
+    // TỰ CHỌN NGÀY VÀ TỰ ĐỘNG ĐẾM NGƯỢC NGAY LẬP TỨC
+    function onCustomDateChange() {
+        const pickerValue = document.getElementById('datetime-picker').value;
+        if (pickerValue) {
+            // Lưu vào localStorage
+            localStorage.setItem('custom_exam_date_' + currentExamKey, pickerValue);
+
+            const customDate = new Date(pickerValue);
+            targetTime = customDate.getTime();
+            document.getElementById('current-target-date').innerText = "Thời điểm: " + formatDateTime(customDate);
+            runCountdown();
+        }
+    }
+
+    function resetCountdownUI() {
+        if (timerInterval) clearInterval(timerInterval);
+        document.getElementById('days').innerText = "00";
+        document.getElementById('hours').innerText = "00";
+        document.getElementById('minutes').innerText = "00";
+        document.getElementById('seconds').innerText = "00";
+    }
+
+    function runCountdown() {
+        if (timerInterval) clearInterval(timerInterval);
+        if (!targetTime) return;
+
+        function update() {
+            const now = new Date().getTime();
+            const distance = targetTime - now;
+
+            if (distance <= 0) {
+                resetCountdownUI();
+                document.getElementById('motto-banner').innerText = "🎉 ĐÃ ĐẾN GIỜ THI! CHÚC BẠN LÀM BÀI THẬT TỐT!";
+                return;
+            }
+
+            const days = Math.floor(distance / (1000 * 60 * 60 * 24));
+            const hours = Math.floor((distance % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+            const minutes = Math.floor((distance % (1000 * 60 * 60)) / (1000 * 60));
+            const seconds = Math.floor((distance % (1000 * 60)) / 1000);
+
+            document.getElementById('days').innerText = String(days).padStart(2, '0');
+            document.getElementById('hours').innerText = String(hours).padStart(2, '0');
+            document.getElementById('minutes').innerText = String(minutes).padStart(2, '0');
+            document.getElementById('seconds').innerText = String(seconds).padStart(2, '0');
+        }
+
+        update();
+        timerInterval = setInterval(update, 1000);
+    }
+
+    // ================= HỆ THỐNG CHUỖI ĐIỂM DANH (STREAK SYSTEM) =================
+    const daysOfWeek = ["T2", "T3", "T4", "T5", "T6", "T7", "CN"];
+
+    function getTodayString() {
+        const today = new Date();
+        return `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}-${String(today.getDate()).padStart(2, '0')}`;
+    }
+
+    function getDayOfWeekIndex(dateObj) {
+        let day = dateObj.getDay();
+        return day === 0 ? 6 : day - 1; // 0: T2, ..., 6: CN
+    }
+
+    function getMondayDateString(d) {
+        const date = new Date(d);
+        const day = date.getDay();
+        const diff = date.getDate() - day + (day === 0 ? -6 : 1);
+        const monday = new Date(date.setDate(diff));
+        return `${monday.getFullYear()}-${String(monday.getMonth() + 1).padStart(2, '0')}-${String(monday.getDate()).padStart(2, '0')}`;
+    }
+
+    function loadStreakData() {
+        const savedData = JSON.parse(localStorage.getItem('study_streak_system')) || {
+            lastCheckin: "",
+            streakCount: 0,
+            weeklyCheckins: [false, false, false, false, false, false, false],
+            weekStartDate: getMondayDateString(new Date())
+        };
+
+        const todayStr = getTodayString();
+        const currentMonday = getMondayDateString(new Date());
+
+        // Nếu sang tuần mới -> Tạo bảng tuần mới
+        if (savedData.weekStartDate !== currentMonday) {
+            savedData.weeklyCheckins = [false, false, false, false, false, false, false];
+            savedData.weekStartDate = currentMonday;
+        }
+
+        // KIỂM TRA BỎ LỠ ĐỂ RESET VỀ NGÀY 1 LÚC 00H00
+        if (savedData.lastCheckin) {
+            const lastDate = new Date(savedData.lastCheckin + "T00:00:00");
+            const today = new Date(todayStr + "T00:00:00");
+            const diffDays = Math.round((today - lastDate) / (1000 * 60 * 60 * 24));
+
+            // Nếu cách nhau từ 2 ngày trở lên (tức là ngày hôm qua không check-in)
+            if (diffDays > 1) {
+                savedData.streakCount = 0; // Tự động reset chuỗi về ngày 1
+            }
+        }
+
+        localStorage.setItem('study_streak_system', JSON.stringify(savedData));
+        return savedData;
+    }
+
+    function renderStreakUI() {
+        const data = loadStreakData();
+        const todayIndex = getDayOfWeekIndex(new Date());
+        const todayStr = getTodayString();
+
+        document.getElementById('streak-count').innerText = data.streakCount;
+
+        const gridEl = document.getElementById('streak-grid');
+        gridEl.innerHTML = "";
+
+        daysOfWeek.forEach((dayName, idx) => {
+            const isCompleted = data.weeklyCheckins[idx];
+            const isToday = idx === todayIndex;
+
+            const dayDiv = document.createElement('div');
+            dayDiv.className = `streak-day ${isCompleted ? 'completed' : ''} ${isToday ? 'today' : ''}`;
+            dayDiv.innerHTML = `
+                <div class="day-name">${dayName}</div>
+                <div class="day-check">${isCompleted ? '✓' : ''}</div>
+            `;
+            gridEl.appendChild(dayDiv);
+        });
+
+        // Khóa nút nếu hôm nay đã điểm danh
+        const btn = document.getElementById('checkin-btn');
+        if (data.lastCheckin === todayStr) {
+            btn.disabled = true;
+            btn.innerText = "✨ Đã Điểm Danh Học Tập Hôm Nay";
+        } else {
+            btn.disabled = false;
+            btn.innerText = "✅ Điểm Danh Học Tập Hôm Nay";
+        }
+    }
+
+    function doCheckin() {
+        const data = loadStreakData();
+        const todayStr = getTodayString();
+        const todayIndex = getDayOfWeekIndex(new Date());
+
+        if (data.lastCheckin === todayStr) return;
+
+        data.lastCheckin = todayStr;
+        data.streakCount += 1;
+        data.weeklyCheckins[todayIndex] = true;
+
+        localStorage.setItem('study_streak_system', JSON.stringify(data));
+        renderStreakUI();
+    }
+
+    // Tự động kiểm tra reset đúng 00h00 đêm
+    setInterval(() => {
+        renderStreakUI();
+    }, 60000);
+
+    // Khởi tạo giao diện ban đầu
+    selectExam('gk1', document.querySelectorAll('.btn-exam')[0]);
+    renderStreakUI();
+</script>
+
+</body>
+</html>
